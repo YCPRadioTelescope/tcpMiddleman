@@ -29,7 +29,8 @@ server.on('connection', function(socket) {
 	// fwd data to final server
 	var client = new Net.Socket();
 	
-	client.connect(8020, '127.0.0.1', function() {
+	// TODO change IP to be final server's IP address
+	client.connect(8020, '10.128.65.159', function() {
 	  console.log('Connected to final server');
 	  client.write(chunk.toString());
 	});
