@@ -1,0 +1,13 @@
+{
+  "name": "middleman_docker_web_app",
+  "version": "1.0.0",
+  "description": "Middleman service on Docker",
+  "author": "Alyssa McDevirr <amcdevitt@ycp.edu>",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "ws": "^7.2.3"
+  }
+}
