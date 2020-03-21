@@ -1,16 +1,26 @@
 // Include Nodejs' net module.
 const Net = require('net');
 // The port on which the server is listening.
-const port = 8080;
+const port = 3333;
 
 // Use net.createServer() in your code. This is just for illustration purpose.
 // Create a new TCP server.
 const server = new Net.Server();
 // The server listens to a socket for a client to make a connection request.
 // Think of a socket as an end point.
+server.listen(port ,  "0.0.0.0", function () {
+
+  var host = server.address().address;
+  var port = server.address().port;
+
+  console.log("Middleman listening for connection requests on socket http://%s:%s", host, port)
+
+});
+/*
 server.listen(port, function() {
   console.log(`Middleman listening for connection requests on socket localhost:${port}`);
 });
+*/
 
 // When a client requests a connection with the server, the server creates a new
 // socket dedicated to that client.
@@ -24,11 +34,11 @@ server.on('connection', function(socket) {
   // The server can also receive data from the client by reading from its socket.
   socket.on('data', function(chunk) {
     console.log(`Data received from client: ${chunk.toString()}`);
-    
+
 	// BEGIN ACTING AS CLIENT
 	// fwd data to final server
 	var client = new Net.Socket();
-	
+
 	// TODO change IP to be final server's IP address
 	client.connect(8020, '10.128.65.159', function() {
 	  console.log('Connected to final server');
@@ -42,8 +52,8 @@ server.on('connection', function(socket) {
 
 	client.on('close', function() {
 	  console.log('Connection closed');
-	});    
-    
+	});
+
   });
 
     // When the client requests to end the TCP connection with the server, the server
