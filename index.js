@@ -40,7 +40,7 @@ server.on('connection', function(socket) {
 	var client = new Net.Socket();
 
 	// TODO change IP to be final server's IP address
-	client.connect(8020, '10.128.65.159', function() {
+	client.connect(8020, '71.207.108.51', function() {
 	  console.log('Connected to final server');
 	  client.write(chunk.toString());
 	});
