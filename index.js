@@ -39,8 +39,6 @@ server.on('connection', function(socket) {
 	// fwd data to final server
 	var client = new Net.Socket();
 
-	// TODO: Where should this forward to?
-  //       Localhost port 80?
 	client.connect(80, '71.207.108.51', function() {
 	  console.log('Connected to final server');
 	  client.write(chunk.toString());

@@ -53,14 +53,12 @@ var server = http.createServer(function(req, res)
         var password = creds[1];
 
         // uncomment below to see what the hashed username and password are
-        // this is only here to easily see a new username and password to test against below
-        // console.log('hashed username: ', md5(username));
-        // console.log('hashed password: ', md5(password));
-
-        console.log('secret username: ', secrets.username);
-        console.log('secret password: ', secrets.password);
-
-        if((username = secrets.username) && (password == secrets.password))
+        // this is only here to easily set a new username and password by passing in plain text values
+        // you could also do this with a new javascript file, but its okay here for now
+        // console.log('hashed username: ', md5(username + "salt - put the salt string the client also uses here"));
+        // console.log('hashed password: ', md5(password + "salt - put the salt string the client also uses here"));
+        
+        if((username == secrets.username) && (password == secrets.password))
         {
             res.statusCode = 200;
             res.end('<html>' +
@@ -111,20 +109,29 @@ server.on('connection', function(socket)
         // fwd data to final server
         var client = new net.Socket();
   
-        // TODO: Where should this forward to?
-        //       Localhost control room port?
+        // the control room is on the same computer, so local host for address
+        // forwardPort should be the port the control room listens on
         client.connect(forwardPort, '127.0.0.1', function() 
         {
             console.log('Connected to final server');
+
+            // TODO: how does the control room interpret the data? Is it better to send plain text as we are here?
             client.write(chunk.toString());
         });
     
         client.on('data', function(data) 
         {
             console.log('Received: ' + data);
-            client.destroy(); // kill client after server's response
+            // TODO: does the client need to be destroyed every time it sends data?
+            //       this is determined by how the control room handles data.
+            //       short answer, it probably does not need to be destroyed each time
+            //       but until the control room is set up properly this will hang as a ?
+            // client.destroy(); // kill client after server's response
         });
     
+        // TODO: this is only a listener for the closing of the socket, how do we end the connection?
+        //       previous implentation ended after any data was sent. Could the control room signal the end of the connection
+        //       - then  the middleman responds by sending a client.destroy()?
         client.on('close', function() 
         {
             console.log('Client connection closed');
