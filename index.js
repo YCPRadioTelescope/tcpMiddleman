@@ -39,7 +39,6 @@ server.on('connection', function(socket) {
 	// fwd data to final server
 	var client = new Net.Socket();
 
-	// TODO change IP to be final server's IP address
 	client.connect(80, '71.207.108.51', function() {
 	  console.log('Connected to final server');
 	  client.write(chunk.toString());
@@ -56,8 +55,8 @@ server.on('connection', function(socket) {
 
   });
 
-    // When the client requests to end the TCP connection with the server, the server
-    // ends the connection.
+  // When the client requests to end the TCP connection with the server, the server
+  // ends the connection.
   socket.on('end', function() {
     console.log('Closing connection with the source client');
   });
