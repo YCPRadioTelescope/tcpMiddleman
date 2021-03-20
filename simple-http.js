@@ -1,10 +1,11 @@
+// imports
 const http = require('http');
 const httpProxy = require('http-proxy');
-// auth client to add basic auth to middleman
 var auth = require('http-auth');
 const net = require('net');
 const secrets = require(__dirname + '\\secrets.json');
 
+// set up authentication
 var basic = auth.basic({
     authRealm: "Private area",
 },
@@ -15,16 +16,16 @@ var basic = auth.basic({
 
 // set up auth event listeners for logging
 basic.on("fail", result => {
-    console.log(`proxy authentication failed: ${result.user}`);
+    console.log(`PROXY: authentication failed: ${result.user}`);
 
 });
 
 basic.on("success", result => {
-    console.log(`proxy authentication success: ${result.user}`);
+    console.log(`PROXY: authentication success: ${result.user}`);
 });
 
 basic.on("error", result => {
-    console.log(`proxy authentication error: ${error.code + " - " + error.message}`);
+    console.log(`PROXY: authentication error: ${error.code + " - " + error.message}`);
 });
 
 const middlemanPort = 5001;
@@ -39,24 +40,23 @@ const forwardPort = 3434;
 ///
 const proxy = httpProxy.createProxyServer({});
 http.createServer(
+    basic.check(function(req, res) 
+    {
+        console.log("PROXY: forwarding proxy request to middleman");
+        // forward the authenticated request to the middleman
+        proxy.web(req, res, { target: "http://127.0.0.1:5001" });
 
-basic.check(function(req, res) 
-{
-    console.log("PROXY: forwarding proxy request to middleman");
-    // forward the authenticated request to the middleman
-    proxy.web(req, res, { target: "http://127.0.0.1:5001" });
-
-})).listen(proxyPort, function() {
-    console.log("proxy server listening at http://127.0.0.1:" + proxyPort + "/");
+    })).listen(proxyPort, function() {
+        console.log("proxy server listening at http://127.0.0.1:" + proxyPort + "/");
 });
 
 ///
 /// create the middleman itself
 ///
-var server = http.createServer(function(req, res) {
+http.createServer(function(req, res) {
     // return a success message & code so we know if we passed auth
     res.statusCode = 200;
-    res.end("Succesfully connected through proxy server to middleman");
+    res.end("MIDDLEMAN: Succesfully connected through proxy server to middleman");
 }
 ).listen(middlemanPort, function() 
 {
@@ -64,7 +64,7 @@ var server = http.createServer(function(req, res) {
 
 }).on('connection', function(socket)
 {
-    console.log('A new connection has been established.');
+    console.log('MIDDLEMAN: A new connection has been established.');
 
     // Now that a TCP connection has been established, the server can send data to
     // the client by writing to its socket.
@@ -73,8 +73,8 @@ var server = http.createServer(function(req, res) {
     // The server can also receive data from the client by reading from its socket.
     socket.on('data', function(chunk) 
     {
-        console.log(`Data received from client:\n\n ${chunk.toString()}`);
-        console.log('Finished printing data from client\n');
+        console.log(`MIDDLEMAN: Data received from client:\n\n${chunk.toString()}`);
+        console.log('MIDDLEMAN: Finished printing data from client\n');
 
         // BEGIN ACTING AS CLIENT
         // fwd data to final server
@@ -84,7 +84,7 @@ var server = http.createServer(function(req, res) {
         // forwardPort should be the port the control room listens on
         client.connect(forwardPort, '127.0.0.1', function() 
         {
-            console.log('Connected to final server');
+            console.log('MIDDLEMAN: Connected to final server');
 
             // TODO: how does the control room interpret the data? Is it better to send plain text as we are here?
             client.write(chunk.toString());
@@ -92,7 +92,7 @@ var server = http.createServer(function(req, res) {
 
         client.on('data', function(data) 
         {
-            console.log('Received: ' + data);
+            console.log('MIDDLEMAN: Received: ' + data);
             // destroy the connection each time, we want the user to reauthenticate each time
             client.destroy(); 
         });
