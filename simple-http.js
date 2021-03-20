@@ -1,60 +1,85 @@
 const http = require('http');
-
+const httpProxy = require('http-proxy');
 // auth client to add basic auth to middleman
 var auth = require('http-auth');
+const net = require('net');
+const secrets = require(__dirname + '\\secrets.json');
+
 var basic = auth.basic({
     authRealm: "Private area",
-    // this file was generated using htpasswd
-    // to make another password for rt run the command below in the middleman directory
-    // > htpasswd -bc server-passwords rt [PASSWORD]
-    authFile: __dirname + "/server-passwords",
-    authType: "basic"
+},
+ (username, password, callback) => {
+    callback(username === secrets.username && password === secrets.password)
+ }
+);
+
+// set up auth event listeners for logging
+basic.on("fail", result => {
+    console.log(`proxy authentication failed: ${result.user}`);
+
 });
 
-const net = require('net');
+basic.on("success", result => {
+    console.log(`proxy authentication success: ${result.user}`);
+});
 
-// to get this file, you need to copy template.secrets.json, populate the data accordingly, 
-// and then remove the template. from infront
-// const secrets = require('C:\\Users\\ycas-admin\\source\\repos\\tcpMiddleman\\secrets.json');
+basic.on("error", result => {
+    console.log(`proxy authentication error: ${error.code + " - " + error.message}`);
+});
 
+const middlemanPort = 5001;
+const proxyPort = 5000;
 
-const port = 5000;
-// 8082 is for PLC and 8083 is for MCU
+// 80 is the port remote listener on the control room looks for (prod forwardPort)
+// 3434 is the port set for the test final server just to make sure things are working as they should 
 const forwardPort = 3434;
 
-authFlag = false;
+///
+/// create proxy server which handles forwarding authenticated requests to the real middleman
+///
+const proxy = httpProxy.createProxyServer({});
+http.createServer(
+
+basic.check(function(req, res) 
+{
+    console.log("PROXY: forwarding proxy request to middleman");
+    // forward the authenticated request to the middleman
+    proxy.web(req, res, { target: "http://127.0.0.1:5001" });
+
+})).listen(proxyPort, function() {
+    console.log("proxy server listening at http://127.0.0.1:" + proxyPort + "/");
+});
 
 ///
-/// auth wrapper around middleman net tcp server
+/// create the middleman itself
 ///
-var server = http.createServer(function(req, res) 
+var server = http.createServer(function(req, res) {
+    // return a success message & code so we know if we passed auth
+    res.statusCode = 200;
+    res.end("Succesfully connected through proxy server to middleman");
+}
+).listen(middlemanPort, function() 
 {
-    // throw through basic auth, checking for username and password specified server-passwords
-    basic.check(req, res, function(username) {
-        res.writeHead(200, {"Content-Type": "text/plain"});
-        res.write("succesfully authenticated user: " + username);
-        res.end();
-    });
-}).listen(5000, function() 
-{
-    console.log("middleman listening on port " + port);
-}).on('connection', function(socket) // start listening, and also set the on connection event by passing a socket object through
+    console.log("middleman listening at http://127.0.0.1:" + middlemanPort + "/");
+
+}).on('connection', function(socket)
 {
     console.log('A new connection has been established.');
 
     // Now that a TCP connection has been established, the server can send data to
     // the client by writing to its socket.
-    socket.write('Hello, source client.');
+    // socket.write('Hello, source client.'); <-- commented out, old debugging print
     
     // The server can also receive data from the client by reading from its socket.
     socket.on('data', function(chunk) 
     {
-        console.log(`Data received from client: ${chunk.toString()}`);
-    
+        console.log(`Data received from client:\n\n ${chunk.toString()}`);
+        console.log('Finished printing data from client\n');
+
         // BEGIN ACTING AS CLIENT
         // fwd data to final server
         var client = new net.Socket();
-    
+
         // the control room is on the same computer, so local host for address
         // forwardPort should be the port the control room listens on
         client.connect(forwardPort, '127.0.0.1', function() 
@@ -64,26 +89,15 @@ var server = http.createServer(function(req, res)
             // TODO: how does the control room interpret the data? Is it better to send plain text as we are here?
             client.write(chunk.toString());
         });
-    
+
         client.on('data', function(data) 
         {
             console.log('Received: ' + data);
-            // TODO: does the client need to be destroyed every time it sends data?
-            //       this is determined by how the control room handles data.
-            //       short answer, it probably does not need to be destroyed each time
-            //       but until the control room is set up properly this will hang as a ?
-            // client.destroy(); // kill client after server's response
-        });
-    
-        // TODO: this is only a listener for the closing of the socket, how do we end the connection?
-        //       previous implentation ended after any data was sent. Could the control room signal the end of the connection
-        //       - then  the middleman responds by sending a client.destroy()?
-        client.on('close', function() 
-        {
-            console.log('Client connection closed');
+            // destroy the connection each time, we want the user to reauthenticate each time
+            client.destroy(); 
         });
     });
-    
+
     // When the client requests to end the TCP connection with the server, the server
     // ends the connection.
     socket.on('end', function() 
