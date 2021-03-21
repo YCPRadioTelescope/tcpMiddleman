@@ -23,7 +23,7 @@ const options = {
     cert: fs.readFileSync('cert.pem')
 }
 
-// set up auth event listeners for logging
+// set up auth event listeners for console logging
 basic.on("fail", result => {
     console.log(`PROXY: authentication failed: ${result.user}`);
 
@@ -45,7 +45,7 @@ const proxyPort = 5000;
 const forwardPort = 3434;
 
 ///
-/// create proxy server which handles forwarding authenticated requests to the real middleman
+/// create HTTPS server which uses proxy server to forward authenticated requests to the real middleman
 ///
 const proxy = httpProxy.createProxyServer({});
 https.createServer(options,
