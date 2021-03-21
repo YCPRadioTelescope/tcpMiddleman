@@ -1,2 +1,4 @@
 secrets.json
 server-passwords
+cert.pem
+key.pem

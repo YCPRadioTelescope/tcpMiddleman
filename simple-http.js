@@ -1,8 +1,11 @@
 // imports
 const http = require('http');
+const https = require('https');
 const httpProxy = require('http-proxy');
+const fs = require('fs');
 var auth = require('http-auth');
 const net = require('net');
+const { fstat } = require('fs');
 const secrets = require(__dirname + '\\secrets.json');
 
 // set up authentication
@@ -13,6 +16,12 @@ var basic = auth.basic({
     callback(username === secrets.username && password === secrets.password)
  }
 );
+
+// set up our self-signed certificate
+const options = {
+    key: fs.readFileSync('key.pem'),
+    cert: fs.readFileSync('cert.pem')
+}
 
 // set up auth event listeners for logging
 basic.on("fail", result => {
@@ -39,7 +48,7 @@ const forwardPort = 3434;
 /// create proxy server which handles forwarding authenticated requests to the real middleman
 ///
 const proxy = httpProxy.createProxyServer({});
-http.createServer(
+https.createServer(options,
     basic.check(function(req, res) 
     {
         console.log("PROXY: forwarding proxy request to middleman");
@@ -47,7 +56,7 @@ http.createServer(
         proxy.web(req, res, { target: "http://127.0.0.1:5001" });
 
     })).listen(proxyPort, function() {
-        console.log("proxy server listening at http://127.0.0.1:" + proxyPort + "/");
+        console.log("proxy server listening at https://127.0.0.1:" + proxyPort + "/");
 });
 
 ///
