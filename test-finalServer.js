@@ -26,12 +26,13 @@ server.on('connection', function(socket)
 
     // Now that a TCP connection has been established, the server can send data to
     // the client by writing to its socket.
-    socket.write('Hello, source client.');
+    socket.write('TEST-FINALSERVER: Hello, source client.');
 
     // The server can also receive data from the client by reading from its socket.
     socket.on('data', function(chunk) 
     {
-        console.log(`Data received from client: ${chunk.toString()}`);
+        console.log(`Data received from client:\n\n ${chunk.toString()}`);
+        console.log('finished receiving data from client\n');
     });
 
     // When the client requests to end the TCP connection with the server, the server

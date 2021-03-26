@@ -1,1 +1,7 @@
 secrets.json
+server-passwords
+cert.pem
+key.pem
+node_modules
+.idea
+.vs
