@@ -12,6 +12,8 @@ This is the middleman! The purpose of this server is to proxy incoming connectio
     * find the setting where you can specify port forwarding
     * forward port 5000 (or whatever you want the proxy in middleman.js to be listening on) to go to the ip of the machine you found earlier.
 
+### Set Up
+
 * After cloning, run npm install to get all the packages needed to run
 * Verify the forwardPort in middleman.js is set to whichever server you wish to ferry requests to
   * If testing, the port the test-finalServer listens on is 3434. This is configurable to whatever you want in test-finalServer.js
