@@ -35,6 +35,21 @@ Running a javascript file
 Installing npm packages for the project
 `npm install`
 
+# HOW TO GET ANOTHER CERT FOR HTTPS
+Hello! The cert I figured out to use is [certbot](https://certbot.eff.org/) - a tool used to get a local server (or any server) a private cert signed by a trusted authority. Without a proper cert, 
+
+> **the front-end will not be able to connect to the middleman. It will throw CORS errors. The CORS stuff is properly set up here, but as a part of CORS it requires an https domain to have a cert signed by a trusted authority.**
+
+So, how to get another cert! On the RT server computer, certbot it already installed. As of writing, our cert expires on **2021-07-04**. I couldn't do anything to extend this time. To refresh this cert you can run...
+
+* `certbot renew` which should renew the existing cert 
+* `certbot certonly --standalone` which will recreate the cert
+
+For each of the above methods you should not have to change any of the pathing in `middleman-server.js`, certbot writes to it's own directory. Nothing is localized to the middleman.
+
+**NOTE:** certbot uses port 80 to ping the domain you give it. To set up the domain, go to AWS Route53 and check the domain middleman.ycpradiotelescope.com. This is the domain I have pointed at (at time of writing) the server computer's IP. This needs to be set to the correct IPv4 of the control room computer. Next, in the firewall you must open port 80 to the control room PC's local subnet address. This address should start with `192.*.*.53` or something like that, while your IPv4 given by your ISP will be different. **If you don't open the port, the challenge routine will fail and you will not be issued another cert.**
+
+
 # Security Features
 
 ## Proxy Server inside the Proxy Server 
