@@ -17,10 +17,11 @@ var basic = auth.basic({
  }
 );
 
-// set up our self-signed certificate
+// set up our cert bot signed cert
 const options = {
-    key: fs.readFileSync('key.pem'),
-    cert: fs.readFileSync('cert.pem')
+    key: fs.readFileSync('C:\\Certbot\\live\\middleman.ycpradiotelescope.com\\privkey.pem'),
+    cert: fs.readFileSync('C:\\Certbot\\live\\middleman.ycpradiotelescope.com\\cert.pem'),
+    ca: fs.readFileSync('C:\\Certbot\\live\\middleman.ycpradiotelescope.com\\chain.pem')
 }
 
 // set up auth event listeners for console logging
@@ -37,27 +38,68 @@ basic.on("error", result => {
     console.log(`PROXY: authentication error: ${error.code + " - " + error.message}`);
 });
 
+// support CORS 
+var enableCors = function(req, res) {
+	if (req.headers['access-control-request-method']) {
+        console.log("CORS: access-control-request-method: ", req.headers['access-control-request-method']);
+		res.setHeader('access-control-allow-methods', req.headers['access-control-request-method']);
+	}
+
+	if (req.headers['access-control-request-headers']) {
+        console.log("CORS: access-control-request-headers: ", req.headers['access-control-request-headers']);
+		res.setHeader('access-control-allow-headers', req.headers['access-control-request-headers']);
+	}
+
+	if (req.headers.origin) {
+        console.log("CORS: req.headers.origin: ", req.headers.origin);
+		res.setHeader('access-control-allow-origin', req.headers.origin);
+		res.setHeader('access-control-allow-credentials', 'true');
+	}
+};
+
 const middlemanPort = 5001;
 const proxyPort = 5000;
 
 // 80 is the port remote listener on the control room looks for (prod forwardPort)
 // 3434 is the port set for the test final server just to make sure things are working as they should 
-const forwardPort = 3434;
+const forwardPort = 80;
 
 ///
 /// create HTTPS server which uses proxy server to forward authenticated requests to the real middleman
 ///
 const proxy = httpProxy.createProxyServer({});
-https.createServer(options,
-    basic.check(function(req, res) 
+// set header for CORS
+proxy.on("proxyRes", function(proxyRes, req, res) {
+	enableCors(req, res);
+});
+
+
+https.createServer(options, function(req, res)
+{
+    if (req.method === 'OPTIONS') 
     {
+        enableCors(req, res);
+        res.writeHead(204);
+        res.end();
+        return;
+    }
+
+    basic.check(req, res) 
+    {
+        enableCors(req, res); 
         console.log("PROXY: forwarding proxy request to middleman");
         // forward the authenticated request to the middleman
-        proxy.web(req, res, { target: "http://127.0.0.1:5001" });
+        proxy.web(req, res, { target: "http://127.0.0.1:5001", 
+                              secure: true,
+		                      changeOrigin: true });
 
-    })).listen(proxyPort, function() {
+    }
+}).listen(proxyPort, function() {
         console.log("proxy server listening at https://127.0.0.1:" + proxyPort + "/");
 });
+
+ 
+
 
 ///
 /// create the middleman itself
