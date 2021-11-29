@@ -83,69 +83,26 @@ console.log("WebSocket Server Created On Port 2222");
 
 wss.on('connection', function connection(ws) {
     ws.on('message', function message(frontEndCommand) {
-    console.log('FRONT END: %s', frontEndCommand);
-    ws.send('Middleman Recieved Your Message and will forward it to control room.');
+        console.log('FRONT END: %s', frontEndCommand);
+        ws.send('Middleman recieved your message and will forward it to control room.');
 
-    // BEGIN ACTING AS CLIENT
-    // fwd data to final server
-    var client = new net.Socket();
-    // the control room is on the same computer, so local host for address
-    // forwardPort should be the port the control room listens on
-    client.connect(forwardPort, '127.0.0.1', function() 
-    {
-        console.log('MIDDLEMAN: Connected to final server');
-        client.write(frontEndCommand);
-    });
+        // BEGIN ACTING AS CLIENT
+        // fwd data to final server
+        var client = new net.Socket();
+        // the control room is on the same computer, so local host for address
+        // forwardPort should be the port the control room listens on
+        client.connect(forwardPort, '127.0.0.1', function() 
+        {
+            console.log('MIDDLEMAN: Connected to control room');
+            client.write(frontEndCommand);
+        });
 
-    client.on('data', function(data) 
-    {
-        console.log('CONTROL ROOM: ' + data);
-        // destroy the connection each time, we want the user to reauthenticate each time
-        client.destroy(); 
-    });
-    wss.close();
+        client.on('data', function(data) 
+        {
+            console.log('CONTROL ROOM: ' + data);
+
+            //client.destroy(); 
+        });
+        wss.close();
     });
 });
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// ///
-// /// create the middleman itself
-// ///
-// http.createServer(function(req, res) {
-//     // return a success message & code so we know if we passed auth
-//     res.statusCode = 200;
-//     res.end("MIDDLEMAN: Succesfully connected through proxy server to middleman");
-// }
-// ).listen(middlemanPort, function() 
-// {
-//     console.log("middleman listening at http://127.0.0.1:" + middlemanPort + "/");
-
-// }).on('connection', function(socket)
-// {
-//     console.log('MIDDLEMAN: A new connection has been established.');
-
-//     // Now that a TCP connection has been established, the server can send data to
-//     // the client by writing to its socket.
-//     // socket.write('Hello, source client.'); <-- commented out, old debugging print
-    
-//     // The server can also receive data from the client by reading from its socket.
-//     socket.on('data', function(chunk) 
-//     {
-//         console.log(`MIDDLEMAN: Data received from client:\n\n${chunk.toString()}`);
-//         console.log('MIDDLEMAN: Finished printing data from client\n');
-
-
-
-//     // When the client requests to end the TCP connection with the server, the server
-//     // ends the connection.
-//     socket.on('end', function() 
-//     {
-//         console.log('Closing connection with the source client');
-//     });
-    
-//     // Don't forget to catch error, for your own sake.
-//     socket.on('error', function(err)
-//     {
-//         console.log(`Error: ${err}`);
-//     });
-// });
