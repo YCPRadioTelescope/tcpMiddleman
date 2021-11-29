@@ -17,13 +17,6 @@ var basic = auth.basic({
  }
 );
 
-// set up our cert bot signed cert
-const options = {
-    key: fs.readFileSync('C:\\Certbot\\live\\middleman.ycpradiotelescope.com\\privkey.pem'),
-    cert: fs.readFileSync('C:\\Certbot\\live\\middleman.ycpradiotelescope.com\\cert.pem'),
-    ca: fs.readFileSync('C:\\Certbot\\live\\middleman.ycpradiotelescope.com\\chain.pem')
-}
-
 // set up auth event listeners for console logging
 basic.on("fail", result => {
     console.log(`PROXY: authentication failed: ${result.user}`);
