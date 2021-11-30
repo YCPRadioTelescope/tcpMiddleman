@@ -94,8 +94,11 @@ wss.on('connection', function connection(ws) {
         {
             console.log('CONTROL ROOM: ' + data);
 
-            //client.destroy(); 
         });
-        wss.close();
+
+        client.on("close", function(){
+            client.destroy(); 
+            wss.close();
+        });
     });
 });
