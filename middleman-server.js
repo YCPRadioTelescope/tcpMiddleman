@@ -69,36 +69,41 @@ proxy.on("proxyRes", function(proxyRes, req, res) {
  
 //Receive Command from Front End using WEBSOCKET Server. Requires Websocket, they are different from regular SOCKETS
 //REGULAR SOCKETS ARE NOT BROWSER COMPATIBLE!!!!
-var frontEndCommand = "Something went wrong...";
-const WebSocket = require('ws')
-const wss = new WebSocket.Server({ port: 2222 })
-console.log("WebSocket Server Created On Port 2222");
+function startWebSocket(){
+    var frontEndCommand = "Something went wrong...";
+    const WebSocket = require('ws')
+    const wss = new WebSocket.Server({ port: 2222 })
+    console.log("WebSocket Server Created On Port 2222");
 
-wss.on('connection', function connection(ws) {
-    ws.on('message', function message(frontEndCommand) {
-        console.log('FRONT END: %s', frontEndCommand);
-        ws.send('Middleman recieved your message and will forward it to control room.');
+    wss.on('connection', function connection(ws) {
+        ws.on('message', function message(frontEndCommand) {
+            console.log('FRONT END: %s', frontEndCommand);
+            ws.send('Middleman recieved your message and will forward it to control room.');
 
-        // BEGIN ACTING AS CLIENT
-        // fwd data to final server
-        var client = new net.Socket();
-        // the control room is on the same computer, so local host for address
-        // forwardPort should be the port the control room listens on
-        client.connect(forwardPort, '127.0.0.1', function() 
-        {
-            console.log('MIDDLEMAN: Connected to control room');
-            client.write(frontEndCommand);
-        });
+            // BEGIN ACTING AS CLIENT
+            // fwd data to final server
+            var client = new net.Socket();
+            // the control room is on the same computer, so local host for address
+            // forwardPort should be the port the control room listens on
+            client.connect(forwardPort, '127.0.0.1', function()
+            {
+                console.log('MIDDLEMAN: Connected to control room');
+                client.write(frontEndCommand);
+            });
 
-        client.on('data', function(data) 
-        {
-            console.log('CONTROL ROOM: ' + data);
+            client.on('data', function(data) 
+            {
+                console.log('CONTROL ROOM: ' + data);
 
-        });
+            });
 
-        client.on("close", function(){
-            client.destroy(); 
-            wss.close();
+            client.on("close", function(){
+                client.destroy(); 
+                wss.close();
+                setTimeout(startWebSocket, 5000);
+            });
         });
     });
-});
+}
+
+startWebSocket();
